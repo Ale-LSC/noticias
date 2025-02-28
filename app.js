@@ -16,21 +16,22 @@ const containers = {
 };
 
 // Função para buscar notícias
-async function fetchNews(query, category = null, targetContainer) {
+async function fetchNews(query = '', category = '', targetContainer) {
     if (!targetContainer) return;
-
-    const url = category
+    
+    const url = category 
         ? `https://newsapi.org/v2/top-headlines?category=${category}&apiKey=${apiKey}`
         : `https://newsapi.org/v2/everything?q=${query}&apiKey=${apiKey}`;
-
+    
     try {
+        targetContainer.innerHTML = '<p>Carregando notícias...</p>';
         const response = await fetch(url);
         const data = await response.json();
-
+        
         if (data.status !== 'ok' || !data.articles) {
-            throw new Error(`Erro na API: ${data.message || 'Resposta inválida'}`);
+            throw new Error(data.message || 'Erro desconhecido ao buscar notícias');
         }
-
+        
         displayNews(data.articles, targetContainer);
     } catch (error) {
         console.error('Erro ao buscar notícias:', error);
@@ -41,7 +42,7 @@ async function fetchNews(query, category = null, targetContainer) {
 // Função para exibir notícias no contêiner
 function displayNews(articles, targetContainer) {
     targetContainer.innerHTML = '';
-    if (!articles || articles.length === 0) {
+    if (!articles.length) {
         targetContainer.innerHTML = '<p>Nenhuma notícia encontrada.</p>';
         return;
     }
@@ -64,8 +65,9 @@ navbarLinks.forEach(link => {
     link.addEventListener('click', (e) => {
         e.preventDefault();
         const category = e.target.getAttribute('data-category');
-        const container = containers[category] || containers.general;
-        fetchNews(null, category, container);
+        if (category && containers[category]) {
+            fetchNews('', category, containers[category]);
+        }
     });
 });
 
@@ -74,16 +76,15 @@ if (searchButton && searchInput) {
     searchButton.addEventListener('click', () => {
         const query = searchInput.value.trim();
         if (query) {
-            fetchNews(query, null, containers.general);
+            fetchNews(query, '', containers.general);
         }
     });
 }
 
 // Carregar notícias iniciais por categoria
 Object.keys(containers).forEach(category => {
-    const container = containers[category];
-    if (container) {
-        fetchNews(null, category, container);
+    if (containers[category]) {
+        fetchNews('', category, containers[category]);
     }
 });
 
